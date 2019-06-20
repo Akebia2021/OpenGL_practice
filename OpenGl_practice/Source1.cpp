@@ -12,7 +12,7 @@ Gluint createProgram(const char *vsrc, const char *fsrc) {
 
 }
 
-//
+
 bool readShaderSource(const char *name, vector<GLchar> &buffer) {
 
 	if (name == NULL) return false;

@@ -8,11 +8,49 @@
 
 using namespace std;
 
-Gluint createProgram(const char *vsrc, const char *fsrc) {
+//shaderソース文字列を受け取り、コンパイルし、Object化してProgramにリンクする
+GLuint createProgram(const char *vsrc, const char *fsrc) {
+
+	//空のProgram object作成
+	const GLuint program(glCreateProgram());
+
+	if (vsrc != NULL)
+	{
+		//create vertex shader object
+		const GLuint vobj(glCreateShader(GL_VERTEX_SHADER));
+		glShaderSource(vobj, 1, &vsrc, NULL);
+		glCompileShader(vobj);
+
+		//Vertex shader objectをProgram objectに組み込む
+		glAttachShader(program, vobj);
+		glDeleteShader(vobj);
+
+	}
+
+
+	if (fsrc != NULL)
+	{
+		//create fragment shader object
+		const GLuint fobj(glCreateShader(GL_FRAGMENT_SHADER));
+		glShaderSource(fobj, 1, &fsrc, NULL);
+		glCompileShader(fobj);
+
+		//Fragment shader objectをProgram objectに組み込む
+		glAttachShader(program, fobj);
+		glDeleteShader(fobj);
+
+	}
+
+	// Program objectをリンクする
+	glBindAttribLocation(program, 0, "vPos");
+	glBindFragDataLocation(program, 0, "FragColor");
+	glLinkProgram(program);
+
+	return program;
 
 }
 
-
+//ファイルを読み込んでBufferに格納する(引数で渡して書き換える)関数
 bool readShaderSource(const char *name, vector<GLchar> &buffer) {
 
 	if (name == NULL) return false;
@@ -29,15 +67,17 @@ bool readShaderSource(const char *name, vector<GLchar> &buffer) {
 	//seekg関数は第一引数に基準からのオフセット、第二引数に基準位置(3パターン)
 	//ここではios::endから０のオフセット、つまりはファイル終端へポインタ移動
 	file.seekg(0L, ios::end);
-	//GLsizeiは整数型 tellg関数は現在のポインタ位置を整数で返す関数
+	//tellgで現在地を返すことでソースの文字数を取得する
 	//static_cast は暗黙の変換が可能なときにその変換を明示する
 	GLsizei length = static_cast<GLsizei>(file.tellg());
 
+	//ファイルサイズ分のメモリ確保
 	buffer.resize(length + 1);
 
-	file.seekg(0L, ios::beg);
-	file.read(buffer.data(), length);
-	buffer[length] = '\0';
+	//ファイルを先頭から読み込む
+	file.seekg(0L, ios::beg); //先頭にポインタ移動
+	file.read(buffer.data(), length); //.data()は配列の先頭へのポインタを返す
+	buffer[length] = '\0'; //末尾に代入
 
 	if (file.fail()) {
 		cerr << "ERROR : could not read source file: " << name << endl;
@@ -47,6 +87,19 @@ bool readShaderSource(const char *name, vector<GLchar> &buffer) {
 
 	file.close();
 	return true;
+}
+
+GLuint loadProgram(const char *vert, const char *frag) {
+	//Shaderソースファイル読み込み
+	std::vector<GLchar> vsrc;
+	const bool vstat(readShaderSource(vert, vsrc));
+	std::vector<GLchar> fsrc;
+	const bool fstat(readShaderSource(frag, fsrc));
+
+	//Program Object　作成
+	// condition ? true return : false return これは三項演算子
+	// vstat, fstat両方がTrueなら Program objectを作成する
+	return vstat && fstat ? createProgram(vsrc.data(), fsrc.data()) : 0;
 }
 
 
@@ -95,11 +148,21 @@ int main() {
 		0.5f, -0.5f, 0.0f
 	};
 
+	//Program object作成
+	const GLuint program(loadProgram("point.vert", "point.frag"));
+
+
 	//Create and bind "Vertex buffer object"
 	GLuint VBO;
 	glGenBuffers(1,&VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(points), points, GL_STATIC_DRAW);
+
+	GLuint VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 
 	//MainLoop
 	while (!glfwWindowShouldClose(window)) {
@@ -107,6 +170,9 @@ int main() {
 		//Drawing
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		glUseProgram(program);
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
 		
 		//バッファの入れ替えとイベント処理
 		glfwSwapBuffers(window);

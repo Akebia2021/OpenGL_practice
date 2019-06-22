@@ -145,8 +145,9 @@
     <ClCompile Include="Source1.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="point.frag" />
+    <None Include="red.frag" />
     <None Include="point.vert" />
+    <None Include="yellow.frag" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

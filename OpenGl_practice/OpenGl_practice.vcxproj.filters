@@ -29,7 +29,10 @@
     <None Include="point.vert">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="point.frag">
+    <None Include="red.frag">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="yellow.frag">
       <Filter>Source Files</Filter>
     </None>
   </ItemGroup>
